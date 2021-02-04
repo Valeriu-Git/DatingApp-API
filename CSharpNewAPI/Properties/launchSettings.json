@@ -19,12 +19,27 @@
     },
     "CSharpNewAPI": {
       "commandName": "Project",
+      "commandLineArgs": "watch run",
+      "workingDirectory": "D:\\FullStack Projects\\DatingApp\\CSharpNewAPI\\CSharpNewAPI",
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": "true",
+      "nativeDebugging": true,
       "applicationUrl": "https://localhost:5001;http://localhost:5000"
+    },
+    "dotnet watch run": {
+      "commandName": "Executable",
+      "executablePath": "dotnet",
+      "workingDirectory": "$(ProjectDir)",
+      "commandLineArgs": "watch run",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:5000/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HTTPS_PORT": "44300"
+      }
     }
   }
 }
