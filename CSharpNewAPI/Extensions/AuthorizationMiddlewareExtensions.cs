@@ -9,9 +9,14 @@ namespace CSharpNewAPI.Extensions
 {
     public static class AuthorizationMiddlewareExtensions
     {
-        public static IApplicationBuilder UseCustomAuthorizationMiddleware(this IApplicationBuilder builder)
+        public static IApplicationBuilder UseCustomAuthenticationMiddleware(this IApplicationBuilder builder)
         {
             return builder.UseMiddleware<AuthorizationMiddleware>();
+        }
+
+        public static IApplicationBuilder UseCustomExceptionApplicationMiddleware(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<ExceptionMiddleware>();
         }
     }
 }

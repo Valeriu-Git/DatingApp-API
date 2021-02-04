@@ -2,6 +2,7 @@ using CSharpNewAPI.Database;
 using CSharpNewAPI.Extensions;
 using CSharpNewAPI.Interfaces;
 using CSharpNewAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -43,11 +44,13 @@ namespace CSharpNewAPI
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "CSharpNewAPI", Version = "v1" });
             });
             services.AddCors();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options => Configuration.Bind("JwtSettings", options));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // this line is used in order to return in the response of a failed request the exception thrown
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -55,9 +58,13 @@ namespace CSharpNewAPI
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CSharpNewAPI v1"));
             }
 
+            app.UseCustomExceptionApplicationMiddleware();
+            
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseCors(option =>
             {
@@ -70,7 +77,7 @@ namespace CSharpNewAPI
 
             app.UseWhen((context) => context.Request.Path.ToString().Contains("Users"), appbuilder =>
             {
-                appbuilder.UseCustomAuthorizationMiddleware();
+                appbuilder.UseCustomAuthenticationMiddleware();
             });
 
             app.UseEndpoints(endpoints =>
