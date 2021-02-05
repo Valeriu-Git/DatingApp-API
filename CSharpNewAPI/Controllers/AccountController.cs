@@ -4,32 +4,32 @@ using CSharpNewAPI.Interfaces;
 using CSharpNewAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
+using CSharpNewAPI.BaseClasses;
 
 namespace CSharpNewAPI.Controllers
 {
     public class AccountController : BaseApiController
     {
-        public DatabaseContext Context { get; }
         public ITokenService TokenService { get; }
-        public ITokenService TokenService2 { get; }
+        private readonly IAppUsersRepository _usersRepository;
+        private readonly IMapper _mapper;
 
-        public AccountController(DatabaseContext context, ITokenService tokenService, ITokenService tokenService2)
+        public AccountController(IAppUsersRepository repository, ITokenService tokenService,IMapper mapper)
         {
-            this.Context = context;
-            this.TokenService = tokenService;
-            this.TokenService2 = tokenService2;
+            _mapper = mapper;
+            _usersRepository = repository;
+            TokenService = tokenService;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AppUser>> RegisterUser([FromBody] RegisterUserDTO addUser)
+        public async Task<ActionResult<AppUser>> RegisterUser([FromBody] RegisterUserDto addUser)
         {
-            if (await DoesUserExist(addUser))
+            if (await _usersRepository.DoesAppUserExistAsync(addUser))
             {
                 return BadRequest("Username is already taken");
             }
@@ -40,39 +40,32 @@ namespace CSharpNewAPI.Controllers
                 PasswordHash = hmac.ComputeHash(Encoding.ASCII.GetBytes(addUser.Password)),
                 PasswordSalt = hmac.Key
             };
-            await this.Context.AddAsync<AppUser>(user);
-            await this.Context.SaveChangesAsync();
+            await _usersRepository.AddAppUser(user);
             return StatusCode(201);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<SuccessLoginUser>> LoginUser([FromBody] AttemptLoginUserDTO user)
+        public async Task<ActionResult<MemberResponseDto>> LoginUser([FromBody] LoginUserRequestDto user)
         {
             AppUser userFromDB;
 
-            if ((userFromDB = await GetUserByUserName(user)) != null)
+            if ((userFromDB = await _usersRepository.GetAppUserByNameAsync(user.UserName)) != null)
             {
-                string token = TokenService.GenerateToken(userFromDB);
+               
                 if (CheckCredentials(user, userFromDB))
                 {
-                    return new SuccessLoginUser()
-                    {
-                        UserName = userFromDB.UserName,
-                        Token = token
-                    };
+                    string token = TokenService.GenerateToken(userFromDB);
+                    MemberResponseDto memberDto = _mapper.Map<MemberResponseDto>(userFromDB);
+                    LoginUserResponseDto loginUserResponseDto = _mapper.Map<LoginUserResponseDto>(memberDto);
+                    loginUserResponseDto.Token = token;
+                    return Ok(loginUserResponseDto);
                 }
                 return BadRequest("WRONG PASSWORD");
             }
             return BadRequest("No user with this username exist");
         }
 
-        private async Task<AppUser> GetUserByUserName(AttemptLoginUserDTO credentials)
-        {
-            AppUser user = await Context.Users.FirstOrDefaultAsync(u => u.UserName.Equals(credentials.UserName));
-            return user;
-        }
-
-        private bool CheckCredentials(AttemptLoginUserDTO userDTO, AppUser userFromDB)
+        private bool CheckCredentials(LoginUserRequestDto userDTO, AppUser userFromDB)
         {
 
             using HMACSHA512 hmac = new HMACSHA512(userFromDB.PasswordSalt);
@@ -82,11 +75,6 @@ namespace CSharpNewAPI.Controllers
                 return true;
             }
             return false;
-        }
-
-        private async Task<bool> DoesUserExist(RegisterUserDTO addUser)
-        {
-            return await Context.Users.AnyAsync(user => user.UserName.ToLower().Equals(addUser.UserName.ToLower()));
         }
     }
 }

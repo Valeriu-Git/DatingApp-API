@@ -1,3 +1,4 @@
+using AutoMapper;
 using CSharpNewAPI.Database;
 using CSharpNewAPI.Extensions;
 using CSharpNewAPI.Interfaces;
@@ -5,18 +6,14 @@ using CSharpNewAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using CSharpNewAPI.Database.Repositories;
+using CSharpNewAPI.Utils;
+using Newtonsoft.Json;
 
 namespace CSharpNewAPI
 {
@@ -33,10 +30,16 @@ namespace CSharpNewAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IAppUsersRepository, AppUserRepository>();
+            services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
             services.AddDbContext<DatabaseContext>(options =>
             {
                 string connectionString = Configuration.GetConnectionString("DefaultConnection");
                 options.UseSqlite(connectionString);
+            });
+            services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             });
             services.AddControllers();
             services.AddSwaggerGen(c =>
