@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using CSharpNewAPI.Models;
 using CSharpNewAPI.Database;
+using CSharpNewAPI.Utils;
+using Json.Net;
 
 namespace CSharpNewAPI.Controllers
 {
@@ -26,9 +28,10 @@ namespace CSharpNewAPI.Controllers
 
 
         [HttpGet("not-found")]
-        public ActionResult<AppUser> GetNotFoundError()
+        public async Task<ActionResult<AppUser>> GetNotFoundError()
         {
-            AppUser user = DatabaseContext.Find<AppUser>(-1);
+           await CustomJsonParser.GetDataFromJson(DatabaseContext);
+           AppUser user = DatabaseContext.Find<AppUser>(-1);
             if (user == null)
             {
                 return NotFound();
@@ -41,7 +44,7 @@ namespace CSharpNewAPI.Controllers
         public ActionResult<string> GetNullReferenceException()
         {
             AppUser user = DatabaseContext.Find<AppUser>(-1);
-            return user.ToString();   
+            return user.ToString();
         }
 
         [HttpGet("bad-request")]

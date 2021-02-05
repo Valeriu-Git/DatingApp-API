@@ -5,33 +5,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using CSharpNewAPI.DTOS;
+using CSharpNewAPI.Interfaces;
 
 namespace CSharpNewAPI.Controllers
 {
     public class UsersController : BaseApiController
     {
-        public DatabaseContext Context { get; set; }
-        public UsersController(DatabaseContext context)
+        private readonly IAppUsersRepository _repository;
+        private readonly IMapper _mapper;
+
+        public UsersController(IAppUsersRepository repository,IMapper mapper)
         {
-            this.Context = context;
+            _repository = repository;
+            _mapper = mapper;
         }
 
         [HttpGet("getAll")]
-        public async Task<ActionResult<List<AppUser>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<MemberResponseDto>>> GetUsers()
         {
-            Task<List<AppUser>> usersTask = new Task<List<AppUser>>(() => this.Context.Users.ToList());
-            usersTask.Start();
-            List<AppUser> result = await usersTask;
-            return result;
+            // var users = await _repository.GetAppUsersAsync();
+            // var membersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
+            var membersToReturn = await _repository.GetMembersAsync();
+            return Ok(membersToReturn);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<AppUser>> GetUser(int id)
+        [HttpGet("{username}")]
+        public async Task<ActionResult<MemberResponseDto>> GetUser(string username)
         {
-            Task<AppUser> getUserTask = new Task<AppUser>(() => this.Context.Users.Find(id));
-            getUserTask.Start();
-            AppUser user = await getUserTask;
-            return user;
+            // var user =await _repository.GetAppUserByNameAsync(username);
+            // var member = _mapper.Map<MemberDto>(user);
+            var member = await _repository.GetMemberByNameAsync(username);
+            return Ok(member);
         }
     }
 }
